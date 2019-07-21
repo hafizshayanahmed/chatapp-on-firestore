@@ -1,5 +1,5 @@
 import React from "react"
-import { getAllUsers, chatRoom } from "../config/firebase"
+import { getAllUsers, createRoom } from "../config/firebase"
 
 class Chatlist extends React.Component {
     constructor() {
@@ -15,14 +15,21 @@ class Chatlist extends React.Component {
 
     async getusers() {
         const users = await getAllUsers()
+        console.log(users)
         this.setState({
             users,
             con: true
-        })
+        }) 
     }
 
     async startChat(e) {
-        console.log(e)
+        try{
+         let chatRoom = await createRoom(e)
+         console.log(e)
+         this.props.history.push(`/chat/:${chatRoom._id}`)
+        }catch (e) {
+            console.log(e)
+        }
     }
 
     render() {
@@ -33,7 +40,7 @@ class Chatlist extends React.Component {
                     return <div>
                         <ul>
                             <li style={{ listStyleType: "none" }}>{e.data.email}<button onClick={() => {
-                                this.startChat(e.id)
+                                this.startChat(e._id)
                             }}>Chat</button></li>
                         </ul>
                     </div>

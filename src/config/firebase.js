@@ -2,13 +2,13 @@ import * as firebase from "firebase"
 import "firebase/firestore"
 
 var firebaseConfig = {
-    apiKey: "AIzaSyBIfUQYZg7r-Rd4d7d4X0_S582we0BdMwc",
-    authDomain: "chatrooms-3df34.firebaseapp.com",
-    databaseURL: "https://chatrooms-3df34.firebaseio.com",
-    projectId: "chatrooms-3df34",
-    storageBucket: "chatrooms-3df34.appspot.com",
-    messagingSenderId: "613351789094",
-    appId: "1:613351789094:web:d582d9bc400e7f07"
+    apiKey: "AIzaSyB1tPTdwBNPaK1kWDJM_SFdEyYxy8-vL4A",
+    authDomain: "testingproject03.firebaseapp.com",
+    databaseURL: "https://testingproject03.firebaseio.com",
+    projectId: "testingproject03",
+    storageBucket: "",
+    messagingSenderId: "362840763684",
+    appId: "1:362840763684:web:c064ae6dffa4eb1b"
 };
 
 firebase.initializeApp(firebaseConfig);
@@ -23,7 +23,7 @@ function login(email, password) {
 function register(email, password) {
     return new Promise((resolve, reject) => {
         auth.createUserWithEmailAndPassword(email, password).then(user => {
-            db.collection("users").add({ email, createdAt: Date.now() }).then(() => {
+            db.collection("users").doc(user.user.uid).set({ email, createdAt: Date.now() }).then(() => {
                 resolve({ message: "Registration successfully" })
             })
                 .catch((e) => {
@@ -43,7 +43,7 @@ function getAllUsers() {
             e.forEach((elem) => {
                 arr.push({
                     data: elem.data(),
-                    id: elem.id
+                    _id: elem.id
                 })
             })
             resolve(arr)
@@ -51,15 +51,55 @@ function getAllUsers() {
     })
 }
 
-function chatRoom(friendID) {
+function createRoom(friendId) {
+    const userId = firebase.auth().currentUser.uid
+    let chatExists = false;
+
+    return new Promise((resolve, reject) => {
+        db.collection('chatrooms')
+            .where('users.' + userId, '==', true)
+            .where('users.' + friendId, '==', true).get().then(snapshot => {
+                snapshot.forEach(elem => {
+                    chatExists = { data: elem.data(), _id: elem.id };
+                })
+                if (!chatExists) {
+                    const obj = {
+                        createdAt: Date.now(),
+                        users: {
+                            [friendId]: true,
+                            [firebase.auth().currentUser.uid]: true
+                        }
+                    }
+                    db.collection('chatrooms').add(obj).then(snapshot => {
+                        resolve({ data: obj, _id: snapshot.id })
+                    })
+                } else {
+                    resolve(chatExists);
+                }
+            })
+    })
+}
+
+function sendMessageToDb(message, roomId) {
     const obj = {
-        createdAt: Date.now(),
-        users: {
-            [friendID]: true,
-            [firebase.auth().currentUser.uid]: true
-        }
+        message,
+        userId: firebase.auth().currentUser.uid,
+        timestamp: Date.now()
     }
-    return db.collection('chatroom').add(obj);
+    db.collection("chatrooms").doc(roomId).collection("messages").add(obj);
+}
+
+function getMessages(roomId) {
+    const messages = []
+    return new Promise((resolve, reject) => {
+        db.collection("chatrooms").doc(roomId).collection("messages")
+            .get().then(snapshot => {
+                snapshot.forEach(elem => {
+                    messages.push({ data: elem.data(), _id: elem.id })
+                })
+                resolve(messages)
+            })
+    })
 }
 
 export {
@@ -67,5 +107,7 @@ export {
     login,
     register,
     getAllUsers,
-    chatRoom,
+    createRoom,
+    sendMessageToDb,
+    getMessages,
 }

@@ -16,7 +16,7 @@ class router extends React.Component {
                 <div>
                     <Route path="/login" component={routes.login} />
                     <Route path="/register" component={routes.register} />
-                    <Route path="/chat" component={routes.chat} />
+                    <Route path="/chat/:id" component={routes.chat} />
                     <Route path="/chatlist" component={routes.chatlist} />
                 </div>
             </Router>
